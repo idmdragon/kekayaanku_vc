@@ -29,3 +29,35 @@ abstract final class AppBreakpoints {
 
 /// Minimum touch target.
 const double kMinTapTarget = 48;
+
+/// Fixed layout sizes from docs/design-system.md 7.
+abstract final class AppLayout {
+  static const double formMaxWidth = 400;
+  static const double contentMaxWidth = 640;
+  static const double wideMaxWidth = 960;
+  static const double sidebarWidth = 240;
+  static const double sidePanelWidth = 420;
+  static const double sheetMaxHeightFactor = 0.88;
+  static const double avatar = 40;
+  static const double avatarLarge = 68;
+  static const double emojiBox = 42;
+  static const double emojiBoxSmall = 36;
+  static const double addButton = 50;
+  static const double iconSize = 20;
+  static const double iconSizeSmall = 16;
+  static const double heroEmoji = 38;
+  static const double skeletonCard = 132;
+  static const double skeletonHero = 160;
+}
+
+/// Motion (docs/design-system.md 11).
+abstract final class AppMotion {
+  static const Duration short = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 200);
+  static const Duration shimmer = Duration(milliseconds: 1200);
+}
+
+/// Only floating elements get a shadow (docs/design-system.md 4).
+abstract final class AppElevation {
+  static const double floating = 8;
+}

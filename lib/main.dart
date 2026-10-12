@@ -13,5 +13,11 @@ Future<void> main() async {
       publishableKey: Env.supabasePublishableKey,
     );
   }
-  runApp(const ProviderScope(child: KekayaankuApp()));
+  runApp(
+    ProviderScope(
+      // Screens show their own error with "Coba lagi"; no silent retries.
+      retry: (_, _) => null,
+      child: const KekayaankuApp(),
+    ),
+  );
 }

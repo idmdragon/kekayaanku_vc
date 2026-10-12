@@ -187,9 +187,9 @@ Kesalahan pada satu user tidak menggagalkan user lain (blok `exception` per user
 
 | Tabel | Kolom utama |
 |---|---|
-| `profiles` | `user_id` PK, `display_name`, `timezone` (default `Asia/Jakarta`), `settings jsonb` (ambang NAV, ambang penanda cashflow, rentang grafik terakhir, toggle garis), `benchmark_instrument_id`, `tracking_started_on` |
+| `profiles` | `user_id` PK, `display_name`, `timezone` (default `Asia/Jakarta`), `accent` (`amber`/`lime`/`blue`, DS-7), `theme_mode` (`system`/`light`/`dark`), `kantong_view` (`list`/`grid`), `settings jsonb` (ambang NAV, ambang penanda cashflow, rentang grafik terakhir, toggle garis), `benchmark_instrument_id` (ditambah bersama tabel `instruments`), `tracking_started_on` (tidak bisa diubah klien) |
 | `fee_presets` | `id`, `user_id`, `name`, `buy_fee_pct`, `sell_fee_pct`, `sell_tax_pct`, `min_fee`, `note`, `needs_verification bool` |
-| `portfolios` | `id`, `user_id`, `name`, `color_token`, `icon`, `fee_preset_id`, `cash_enabled`, `sort_order`, `archived_at` |
+| `portfolios` | `id`, `user_id` (default `auth.uid()`), `name`, `emoji`, `color_key` (8 warna kantong), `note`, `fee_preset_id` (ditambah bersama `fee_presets`), `cash_enabled`, `sort_order`, `archived_at`; `unique (id, user_id)` untuk FK komposit dari `holdings` |
 | `holdings` | `id`, `user_id`, `portfolio_id`, `category` (`gold`,`crypto`,`stock`,`mutual_fund`,`deposit`,`savings_idr`,`savings_fx`,`receivable`,`debt`,`cash`), `instrument_id` (nullable), `name`, `currency`, `started_on`, `params jsonb`, `archived_at` |
 | `transactions` | `id`, `user_id`, `holding_id`, `tx_date`, `type`, `qty`, `price`, `amount`, `fee`, `tax`, `reason` (`tp`,`cut_loss`,`other`), `flow_kind` (`external_in`,`external_out`,`internal`,`income`,`expense`,`none`), `group_id`, `realized_pl` (diisi sistem), `counted_on` (diisi snapshot), `note`, `created_at`, `updated_at` |
 | `holding_positions` | `holding_id` PK, `user_id`, `qty`, `avg_price`, `buy_fee_per_unit`, `realized_pl_total`, `cash_balance`, `computed_at` (turunan, diisi sistem) |

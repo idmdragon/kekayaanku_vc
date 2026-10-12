@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kekayaanku/app.dart';
 
 void main() {
-  testWidgets('app starts on the setup status screen', (tester) async {
-    await tester.pumpWidget(const KekayaankuApp());
+  testWidgets('without Supabase config the app shows the setup screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(const ProviderScope(child: KekayaankuApp()));
     await tester.pumpAndSettle();
 
     expect(find.text('Kekayaanku'), findsOneWidget);
@@ -22,7 +25,7 @@ void main() {
     tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
     addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
 
-    await tester.pumpWidget(const KekayaankuApp());
+    await tester.pumpWidget(const ProviderScope(child: KekayaankuApp()));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });

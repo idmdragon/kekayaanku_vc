@@ -35,4 +35,17 @@ abstract final class AppIcons {
   static const IconData deposito = LucideIcons.lock;
   static const IconData cash = LucideIcons.banknote;
   static const IconData forex = LucideIcons.globe;
+  static const IconData grip = LucideIcons.gripVertical;
+  static const IconData archive = LucideIcons.archive;
+  static const IconData unarchive = LucideIcons.archiveRestore;
+  static const IconData delete = LucideIcons.trash2;
+  static const IconData signOut = LucideIcons.logOut;
+  static const IconData account = LucideIcons.user;
+  static const IconData appearance = LucideIcons.palette;
+  static const IconData password = LucideIcons.keyRound;
+  static const IconData info = LucideIcons.info;
+  static const IconData themeLight = LucideIcons.sun;
+  static const IconData themeDark = LucideIcons.moon;
+  static const IconData themeSystem = LucideIcons.monitor;
+  static const IconData emoji = LucideIcons.smile;
 }
