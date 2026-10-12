@@ -48,4 +48,9 @@ abstract final class AppIcons {
   static const IconData themeDark = LucideIcons.moon;
   static const IconData themeSystem = LucideIcons.monitor;
   static const IconData emoji = LucideIcons.smile;
+  static const IconData crypto = LucideIcons.coins;
+  static const IconData receivable = LucideIcons.arrowDownLeft;
+  static const IconData debt = LucideIcons.arrowUpRight;
+  static const IconData setBalance = LucideIcons.scale;
+  static const IconData chart = LucideIcons.chartLine;
 }

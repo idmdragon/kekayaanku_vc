@@ -48,6 +48,12 @@ abstract final class AppLayout {
   static const double heroEmoji = 38;
   static const double skeletonCard = 132;
   static const double skeletonHero = 160;
+  static const double chartHeight = 180;
+  static const double chartAxisWidth = 52;
+  static const double donut = 120;
+
+  /// Content width from which Beranda splits into two columns.
+  static const double twoColumnMin = 840;
 }
 
 /// Motion (docs/design-system.md 11).

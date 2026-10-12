@@ -528,6 +528,8 @@ Semua pertanyaan terbuka sudah dijawab:
 | A-39 | Setiap aset/utang/piutang ada di tepat satu portofolio; bawaan "Utama" |
 | A-40 | Penanda setoran/penarikan besar di grafik, ambang default Rp1.000.000 |
 | A-41 | Unrealized di Statistik = posisi pada akhir rentang terhadap avg, bukan perubahan selama rentang |
+| A-42 | Saldo awal aset yang ditambahkan setelah snapshot pertama dihitung setoran (`external_in`); sebelum snapshot pertama dihitung modal awal (disetujui Ilham, 12 Okt 2026) |
+| A-43 | "Perubahan hari ini" di Overview dan kantong = net worth sekarang − net worth snapshot terakhir − cashflow modal sejak snapshot itu, jadi setor/tarik tidak terlihat sebagai untung/rugi **[ASUMSI, perlu konfirmasi]** |
 
 ## 16. Daftar aturan keuangan yang perlu diverifikasi
 
@@ -555,4 +557,5 @@ Semua disimpan sebagai konfigurasi (bukan konstanta di kode) dan diberi label di
 | v1.4 | 12 Okt 2026 | Beranda jadi Overview: pembanding IHSG/BTC di grafik, alokasi donut per kantong atau jenis, tanpa ringkasan dan daftar kantong (F-DASH-4, F-DASH-5). |
 | v1.3 | 12 Okt 2026 | Modal/Unrealized/Tunai di kartu kantong (F-PF-9), riwayat P/L (F-PF-10). |
 | v1.2 | 12 Okt 2026 | Kas kantong hanya rupiah (F-PF-4); uang rupiah dan valas punya bentuk rekening/tunai; valas MVP diperluas ke beberapa mata uang dengan konversi rupiah langsung di form (6.2.6, 6.2.7). |
+| v1.5 | 12 Okt 2026 | Slice 2: A-42 (saldo awal setelah tracking = setoran, keputusan Ilham) dan A-43 (perubahan hari ini tanpa cashflow). |
 | v1.1 | 12 Okt 2026 | Dari review desain: label rentang bahasa Inggris dengan default 1W (F-DASH-2); Statistik mendapat rentang kustom, unrealized, dan daftar aset yang dipegang (F-STAT-5 s.d. 7, A-41). |

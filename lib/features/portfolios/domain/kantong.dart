@@ -26,8 +26,8 @@ const kKantongEmoji = [
 const int kKantongNameMax = 28;
 const int kKantongNoteMax = 280;
 
-/// Card figures for one kantong. All zero until slice 2 brings holdings and
-/// the valuation RPC; they are never computed in Dart.
+/// Card figures for one kantong, from `dashboard_summary()`. Never computed
+/// in Dart.
 @immutable
 class KantongFigures {
   const KantongFigures({
@@ -36,6 +36,8 @@ class KantongFigures {
     required this.unrealized,
     required this.cash,
     required this.assetCount,
+    this.change,
+    this.changePct,
   });
 
   static final KantongFigures empty = KantongFigures(
@@ -51,6 +53,11 @@ class KantongFigures {
   final Decimal unrealized;
   final Decimal cash;
   final int assetCount;
+
+  /// Today's change without cashflow (PRD A-43); null before the kantong
+  /// has a snapshot.
+  final Decimal? change;
+  final Decimal? changePct;
 }
 
 /// What the editor produces; also the writable columns of `portfolios`.
@@ -139,6 +146,19 @@ class Kantong {
   final KantongFigures figures;
 
   bool get archived => archivedAt != null;
+
+  Kantong withFigures(KantongFigures f) => Kantong(
+    id: id,
+    name: name,
+    emoji: emoji,
+    color: color,
+    cashEnabled: cashEnabled,
+    note: note,
+    sortOrder: sortOrder,
+    archivedAt: archivedAt,
+    createdAt: createdAt,
+    figures: f,
+  );
 
   KantongDraft toDraft() => KantongDraft(
     name: name,

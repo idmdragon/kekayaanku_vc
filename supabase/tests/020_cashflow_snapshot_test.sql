@@ -16,7 +16,7 @@
 -- and stays put through every deposit, withdrawal and correction.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(72);
+select plan(77);
 
 insert into auth.users (id, email, raw_user_meta_data) values
   ('11111111-1111-1111-1111-111111111111', 'ani@example.com',
@@ -279,6 +279,18 @@ select is(
    where snap_date = '2026-01-10'),
   11500000::numeric, 'net deposits 11,5 jt against net worth 11,55 jt: 50 rb earned');
 
+-- Riwayat list (A-43: counted cashflow is not a change).
+set local role authenticated;
+select results_eq(
+  $$select snap_date, change::numeric, net_deposits::numeric
+    from public.snapshot_history() where snap_date between '2026-01-06' and '2026-01-07'$$,
+  $$values ('2026-01-07'::date, 0::numeric, 17000000::numeric),
+           ('2026-01-06'::date, 50000::numeric, 12000000::numeric)$$,
+  'history: the deposit day shows no change, the interest day shows 50 rb');
+select is((select change from public.snapshot_history() where snap_date = '2026-01-05'),
+  null, 'history: the first snapshot has no change');
+reset role;
+
 -- Editing a counted row also corrects (H-2).
 set local role authenticated;
 select lives_ok(
@@ -311,6 +323,22 @@ select results_eq(
     where (p ->> 'portfolio_id')::uuid = (select id from ids where k = 'utama')$$,
   $$values (2600000::numeric, 2000000::numeric, 1, 0::numeric)$$,
   'dashboard: kantong Utama figures (cash is not counted as an asset)');
+
+select results_eq(
+  $$select c ->> 'category', (c ->> 'value')::numeric
+    from jsonb_array_elements(public.dashboard_summary() -> 'categories') c$$,
+  $$values ('savings_idr'::text, 10650000::numeric), ('cash'::text, 2000000::numeric)$$,
+  'dashboard: allocation by asset kind');
+
+-- Deleting a holding whose rows were counted books what it carried (H-2).
+select lives_ok(
+  $$delete from holdings where id = (select id from ids where k = 'dompet')$$,
+  'Ani deletes the Dompet holding');
+reset role;
+select is(
+  (select sum(amount) from private.cashflow_corrections where counted_on is null),
+  -500000::numeric, 'its counted 600 rb leaves a -600 rb correction next to the +100 rb');
+set local role authenticated;
 
 -- Kantong rules ------------------------------------------------------------------
 select throws_ok(

@@ -280,6 +280,37 @@ create trigger transactions_after_change
   after insert or update or delete on public.transactions
   for each row execute function private.transactions_after_change();
 
+-- Deleting a holding cascades to its transactions after the holding row is
+-- gone, so the per-row trigger cannot find its kantong. Book the capital the
+-- counted rows carried as one correction up front.
+create or replace function private.holdings_before_delete()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_capital numeric;
+begin
+  if not exists (select 1 from public.profiles where user_id = old.user_id) then
+    return old;
+  end if;
+  select coalesce(sum(private.capital_value(t.type, t.flow_kind, t.amount)), 0)
+    into v_capital
+  from public.transactions t
+  where t.holding_id = old.id and t.counted_on is not null;
+  if v_capital <> 0 then
+    insert into private.cashflow_corrections (user_id, portfolio_id, amount)
+    values (old.user_id, old.portfolio_id, -v_capital);
+  end if;
+  return old;
+end;
+$$;
+
+create trigger holdings_before_delete
+  before delete on public.holdings
+  for each row execute function private.holdings_before_delete();
+
 -- ---------------------------------------------------------------------------
 -- Kantong cash cannot be switched off while it holds money.
 -- ---------------------------------------------------------------------------
@@ -1102,15 +1133,18 @@ begin
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'portfolio_id', p.id,
-    'value', f.value_idr,
-    'cost', f.cost_idr,
-    'unrealized', f.value_idr - f.cost_idr,
-    'cash', f.cash_idr,
+    'value', f.value_idr::text,
+    'cost', f.cost_idr::text,
+    'unrealized', (f.value_idr - f.cost_idr)::text,
+    'cash', f.cash_idr::text,
     'asset_count', f.asset_count,
-    'flow_since', f.flow,
+    'flow_since', f.flow::text,
     'change', case when b.value_idr is null then null
-                   else f.value_idr - b.value_idr - f.flow end,
-    'base_value', b.value_idr
+                   else (f.value_idr - b.value_idr - f.flow)::text end,
+    'change_pct', case when b.value_idr > 0
+                       then round((f.value_idr - b.value_idr - f.flow)
+                                  / b.value_idr * 100, 4)::text end,
+    'base_value', b.value_idr::text
   ) order by p.sort_order), '[]'::jsonb)
   into v_portfolios
   from public.portfolios p
@@ -1134,26 +1168,64 @@ begin
    and b.snap_date = v_base.snap_date
   where p.user_id = v_uid;
 
+  -- Amounts go out as strings so the client parses them without passing
+  -- through floating point (CLAUDE.md: money is never a double).
   return jsonb_build_object(
     'as_of', v_today,
-    'total_assets', v_nw,
-    'total_receivables', 0,
-    'total_debts', 0,
-    'net_worth', v_nw,
+    'total_assets', v_nw::text,
+    'total_receivables', '0',
+    'total_debts', '0',
+    'net_worth', v_nw::text,
     -- Before the first snapshot everything present is starting capital.
-    'net_deposits', case when v_latest.user_id is null then v_nw
-                         else v_latest.base_capital + v_latest.cum_deposits
-                              - v_latest.cum_withdrawals + v_pending end,
+    'net_deposits', (case when v_latest.user_id is null then v_nw
+                          else v_latest.base_capital + v_latest.cum_deposits
+                               - v_latest.cum_withdrawals + v_pending end)::text,
     'base_date', v_base.snap_date,
-    'base_net_worth', v_base.net_worth,
-    'flow_since', v_since,
+    'base_net_worth', v_base.net_worth::text,
+    'flow_since', v_since::text,
     'change', case when v_base.user_id is null then null
-                   else v_nw - v_base.net_worth - v_since end,
+                   else (v_nw - v_base.net_worth - v_since)::text end,
+    'change_pct', case when v_base.net_worth > 0
+                       then round((v_nw - v_base.net_worth - v_since)
+                                  / v_base.net_worth * 100, 4)::text end,
     'first_snapshot_on', (select min(snap_date) from public.snapshots
                           where user_id = v_uid),
+    -- Allocation by asset kind (PRD F-DASH-5); kantong cash is its own slice.
+    'categories', (select coalesce(jsonb_agg(jsonb_build_object(
+                     'category', c.category, 'value', c.value_idr::text)
+                     order by c.value_idr desc), '[]'::jsonb)
+                   from (select category, sum(value_idr) as value_idr
+                         from pg_temp.live_val group by category
+                         having sum(value_idr) <> 0) c),
     'portfolios', v_portfolios);
 end;
 $$;
 
 revoke all on function public.dashboard_summary() from public, anon;
 grant execute on function public.dashboard_summary() to authenticated;
+
+-- Snapshot list for Riwayat and the net worth chart, newest first. The
+-- change follows the same rule as the dashboard (A-43): the day's counted
+-- cashflow is not a gain or loss.
+create or replace function public.snapshot_history(p_limit integer default 800)
+returns table (
+  snap_date date, net_worth text, net_flow text, change text,
+  net_deposits text, unit_value text)
+language sql
+stable
+security invoker
+set search_path = ''
+as $$
+  select s.snap_date, s.net_worth::text, s.net_flow::text,
+         (s.net_worth - lag(s.net_worth) over w - s.net_flow)::text,
+         (s.base_capital + s.cum_deposits - s.cum_withdrawals)::text,
+         s.unit_value::text
+  from public.snapshots s
+  where s.user_id = (select auth.uid())
+  window w as (order by s.snap_date)
+  order by s.snap_date desc
+  limit p_limit
+$$;
+
+revoke all on function public.snapshot_history(integer) from public, anon;
+grant execute on function public.snapshot_history(integer) to authenticated;

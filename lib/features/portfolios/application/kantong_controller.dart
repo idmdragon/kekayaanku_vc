@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_providers.dart';
 import '../../auth/application/auth_controller.dart';
+import '../../holdings/application/finance_providers.dart';
 import '../data/kantong_repository.dart';
 import '../domain/kantong.dart';
 
@@ -27,13 +28,19 @@ class KantongController extends AsyncNotifier<List<Kantong>> {
 
   Future<Kantong> create(KantongDraft draft) async {
     final k = await _repo.create(draft);
-    if (ref.mounted) state = AsyncData([..._current, k]);
+    if (ref.mounted) {
+      state = AsyncData([..._current, k]);
+      ref.invalidate(dashboardSummaryProvider);
+    }
     return k;
   }
 
   Future<void> save(String id, KantongDraft draft) async {
     final k = await _repo.update(id, draft);
-    if (ref.mounted) _replace(k);
+    if (ref.mounted) {
+      _replace(k);
+      ref.invalidate(dashboardSummaryProvider);
+    }
   }
 
   Future<void> setArchived(String id, {required bool archived}) async {
@@ -44,6 +51,7 @@ class KantongController extends AsyncNotifier<List<Kantong>> {
   Future<void> delete(String id) async {
     await _repo.delete(id);
     if (ref.mounted) {
+      ref.invalidate(dashboardSummaryProvider);
       state = AsyncData([
         for (final x in _current)
           if (x.id != id) x,
@@ -72,9 +80,40 @@ final kantongControllerProvider =
       KantongController.new,
     );
 
+/// Kantong with their live figures attached. Waits for the figures on the
+/// first load; if only the figures fail, kantong still show with zeros and
+/// Beranda reports the error.
+final kantongListProvider = Provider<AsyncValue<List<Kantong>>>((ref) {
+  final kantong = ref.watch(kantongControllerProvider);
+  final summary = ref.watch(dashboardSummaryProvider);
+  if (summary.isLoading && !summary.hasValue && !summary.hasError) {
+    return kantong.hasError ? kantong : const AsyncLoading();
+  }
+  final figures = summary.value?.portfolios ?? const {};
+  return kantong.whenData(
+    (list) => [
+      for (final k in list)
+        switch (figures[k.id]) {
+          null => k,
+          final f => k.withFigures(
+            KantongFigures(
+              value: f.value,
+              cost: f.cost,
+              unrealized: f.unrealized,
+              cash: f.cash,
+              assetCount: f.assetCount,
+              change: f.change,
+              changePct: f.changePct,
+            ),
+          ),
+        },
+    ],
+  );
+});
+
 /// One kantong by id, or `null` if it does not exist (deleted, wrong link).
 final kantongByIdProvider = Provider.family<AsyncValue<Kantong?>, String>(
   (ref, id) => ref
-      .watch(kantongControllerProvider)
+      .watch(kantongListProvider)
       .whenData((list) => list.where((k) => k.id == id).firstOrNull),
 );

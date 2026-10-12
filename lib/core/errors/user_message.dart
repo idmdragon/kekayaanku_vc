@@ -55,7 +55,20 @@ String _dbMessage(PostgrestException e) {
     case '23514':
       return 'Isian tidak memenuhi aturan. Periksa kembali lalu simpan.';
     case '23503':
-      return 'Data ini masih dipakai di tempat lain, jadi belum bisa dihapus.';
+      return 'Data ini masih dipakai di tempat lain, jadi belum bisa dihapus. '
+          'Kantong yang berisi aset bisa diarsipkan.';
+    case 'KKN01':
+      return 'Saldo tidak cukup pada tanggal itu. Periksa transaksi '
+          'sebelumnya atau kurangi jumlahnya.';
+    case 'KKD01':
+      return 'Tanggal tidak bisa di masa depan atau sebelum saldo awal aset.';
+    case 'KKC01':
+      return 'Kas kantong masih berisi uang. Tarik atau pindahkan dulu '
+          'sebelum mematikan kas.';
+    case 'KKH01':
+      return 'Aset atau kantong tidak ditemukan. Mungkin sudah dihapus.';
+    case 'KKA01':
+      return 'Jumlah harus lebih dari 0.';
   }
   return 'Gagal menyimpan ke database. Coba lagi sebentar lagi.';
 }

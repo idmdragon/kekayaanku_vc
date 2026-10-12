@@ -23,7 +23,7 @@ class KantongListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final kantong = ref.watch(kantongControllerProvider);
+    final kantong = ref.watch(kantongListProvider);
     final view =
         ref.watch(profileControllerProvider).value?.kantongView ??
         KantongView.list;
