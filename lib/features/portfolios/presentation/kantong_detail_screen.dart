@@ -1,3 +1,4 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -13,6 +14,9 @@ import '../../../shared/widgets/list_group.dart';
 import '../../../shared/widgets/page_frame.dart';
 import '../../../shared/widgets/states.dart';
 import '../../../shared/widgets/top_bar.dart';
+import '../../holdings/application/finance_providers.dart';
+import '../../holdings/presentation/cash_sheets.dart';
+import '../../holdings/presentation/cash_widgets.dart';
 import '../application/kantong_controller.dart';
 import '../domain/kantong.dart';
 import 'kantong_widgets.dart';
@@ -102,14 +106,7 @@ class _KantongDetailScreenState extends ConsumerState<KantongDetailScreen> {
                         'kantong berisi aset.',
                   ),
                 ],
-                _Tab.transaksi => const [
-                  EmptyState(
-                    title: 'Belum ada transaksi',
-                    message:
-                        'Beli, jual, setor, dan tarik di kantong ini akan '
-                        'tercatat di sini.',
-                  ),
-                ],
+                _Tab.transaksi => [_TransactionsTab(kantong: k)],
                 _Tab.info => [_InfoTab(kantong: k)],
               },
             ],
@@ -119,16 +116,133 @@ class _KantongDetailScreenState extends ConsumerState<KantongDetailScreen> {
     );
   }
 
-  List<Widget> _assetTab(Kantong k) => [
-    EmptyState(
-      emoji: k.emoji,
-      title: 'Kantong masih kosong',
-      message:
-          'Pencatatan aset (saham, kripto, emas, reksadana, deposito, rupiah, '
-          'valas) hadir di pembaruan berikutnya. Kantong ini sudah siap '
-          'menampungnya.',
-    ),
-  ];
+  List<Widget> _assetTab(Kantong k) => [_AssetsTab(kantong: k)];
+}
+
+class _AssetsTab extends ConsumerWidget {
+  const _AssetsTab({required this.kantong});
+
+  final Kantong kantong;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final k = kantong;
+    final async = ref.watch(holdingsProvider);
+    if (async.hasError && !async.hasValue) {
+      return ErrorPanel(
+        what: 'Aset gagal dimuat.',
+        error: async.error!,
+        onRetry: () => ref.invalidate(holdingsProvider),
+      );
+    }
+    if (!async.hasValue) {
+      return const LoadingRegion(
+        child: Skeleton(height: AppLayout.skeletonCard),
+      );
+    }
+    final mine = async.value!.where((h) => h.portfolioId == k.id).toList();
+    final cash = mine.where((h) => h.isCash).firstOrNull;
+    final assets = mine.where((h) => !h.isCash).toList();
+
+    final addAsset = ListRow(
+      icon: AppIcons.buy,
+      title: 'Tambah aset',
+      subtitle: 'Rupiah sekarang; saham, kripto, emas, dan lainnya menyusul',
+      onTap: () => context.push('/aset/baru?kantong=${k.id}'),
+    );
+    final depositCash = ListRow(
+      icon: AppIcons.deposit,
+      title: 'Setor ke kas kantong',
+      subtitle: 'Dicatat sebagai dana disetor',
+      onTap: () => showFlowSheet(context, inflow: true, portfolioId: k.id),
+    );
+
+    if (assets.isEmpty && (cash == null || cash.qty == Decimal.zero)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          EmptyState(
+            emoji: k.emoji,
+            title: 'Kantong masih kosong',
+            message: 'Isi dengan aset baru atau setor ke kas kantong.',
+          ),
+          ListGroup(children: [addAsset, if (k.cashEnabled) depositCash]),
+        ],
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ListGroup(
+          children: [
+            if (cash != null && k.cashEnabled)
+              HoldingRow(
+                holding: cash,
+                label: 'Kas kantong',
+                onTap: () => context.push('/aset/${cash.id}'),
+              ),
+            for (final h in assets)
+              HoldingRow(
+                holding: h,
+                onTap: () => context.push('/aset/${h.id}'),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.s12),
+        ListGroup(
+          children: [addAsset, if (k.cashEnabled && cash == null) depositCash],
+        ),
+      ],
+    );
+  }
+}
+
+class _TransactionsTab extends ConsumerWidget {
+  const _TransactionsTab({required this.kantong});
+
+  final Kantong kantong;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final async = ref.watch(kantongTransactionsProvider(kantong.id));
+    final holdings = ref.watch(holdingsProvider).value ?? const [];
+    return async.when(
+      skipLoadingOnReload: true,
+      loading: () =>
+          const LoadingRegion(child: Skeleton(height: AppLayout.skeletonCard)),
+      error: (e, _) => ErrorPanel(
+        what: 'Transaksi gagal dimuat.',
+        error: e,
+        onRetry: () => ref.invalidate(kantongTransactionsProvider(kantong.id)),
+      ),
+      data: (list) => list.isEmpty
+          ? const EmptyState(
+              title: 'Belum ada transaksi',
+              message:
+                  'Setor, tarik, dan set saldo di kantong ini tercatat di '
+                  'sini. Beli dan jual menyusul bersama saham dan kripto.',
+            )
+          : ListGroup(
+              children: [
+                for (final tx in list)
+                  TransactionTile(
+                    tx: tx,
+                    showHolding: true,
+                    onTap: () => showTransactionSheet(
+                      context,
+                      tx,
+                      firstDate:
+                          holdings
+                              .where((h) => h.id == tx.holdingId)
+                              .firstOrNull
+                              ?.startedOn ??
+                          tx.date,
+                    ),
+                  ),
+              ],
+            ),
+    );
+  }
 }
 
 class _ArchivedNote extends StatelessWidget {
@@ -191,6 +305,7 @@ class _Hero extends StatelessWidget {
               fontFeatures: context.nums.num.fontFeatures,
             ),
           ),
+          KantongChangeText(figures: k.figures),
           Text(
             k.figures.assetCount == 0
                 ? 'Belum ada aset di kantong ini'

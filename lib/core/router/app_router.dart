@@ -2,6 +2,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/holdings/presentation/add_asset_screens.dart';
+import '../../features/holdings/presentation/holding_detail_screen.dart';
 import '../../features/auth/application/auth_controller.dart';
 import '../../features/auth/presentation/password_screens.dart';
 import '../../features/auth/presentation/sign_in_screen.dart';
@@ -121,6 +123,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/kantong/:id/ubah',
         builder: (_, s) =>
             KantongEditorScreen(kantongId: s.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/aset/baru',
+        builder: (_, s) =>
+            AddAssetScreen(kantongId: s.uri.queryParameters['kantong']),
+      ),
+      GoRoute(
+        path: '/aset/baru/rupiah',
+        builder: (_, s) =>
+            SavingsFormScreen(kantongId: s.uri.queryParameters['kantong']),
+      ),
+      GoRoute(
+        path: '/aset/:id',
+        builder: (_, s) =>
+            HoldingDetailScreen(holdingId: s.pathParameters['id']!),
       ),
       GoRoute(path: '/profil', builder: (_, _) => const ProfileScreen()),
       GoRoute(path: '/profil/akun', builder: (_, _) => const AccountScreen()),

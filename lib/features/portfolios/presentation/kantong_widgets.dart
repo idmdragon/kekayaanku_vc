@@ -94,6 +94,28 @@ class KantongFiguresRow extends StatelessWidget {
   }
 }
 
+/// `+0,82% hari ini`, coloured by direction. Empty before the kantong's
+/// first snapshot.
+class KantongChangeText extends StatelessWidget {
+  const KantongChangeText({super.key, required this.figures});
+
+  final KantongFigures figures;
+
+  @override
+  Widget build(BuildContext context) {
+    final pct = figures.changePct;
+    if (pct == null) return const SizedBox.shrink();
+    final c = context.colors;
+    return Text(
+      '${formatPercent(pct)} hari ini',
+      style: context.nums.numSm.copyWith(color: plColor(c, pct)),
+    );
+  }
+}
+
+/// Positive green, negative red, zero in the text colour.
+Color plColor(AppColors c, Decimal v) => _plColor(c, v);
+
 Color _plColor(AppColors c, Decimal v) => v > Decimal.zero
     ? c.positive
     : v < Decimal.zero
@@ -148,9 +170,15 @@ class KantongCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s8),
-                Text(
-                  formatCardAmount(k.figures.value),
-                  style: context.nums.numLg,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      formatCardAmount(k.figures.value),
+                      style: context.nums.numLg,
+                    ),
+                    KantongChangeText(figures: k.figures),
+                  ],
                 ),
               ],
             ),
@@ -219,6 +247,7 @@ class KantongGridCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.s4),
             Text(formatCardAmount(f.value), style: context.nums.numLg),
+            KantongChangeText(figures: f),
             const SizedBox(height: AppSpacing.s8),
             Divider(height: 1, color: c.kantongTint(k.color, amount: 0.5)),
             const SizedBox(height: AppSpacing.s8),

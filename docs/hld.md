@@ -227,6 +227,15 @@ Kesalahan pada satu user tidak menggagalkan user lain (blok `exception` per user
 
 Snapshot lama tidak pernah disentuh oleh recalc (PRD F-SNAP-2). Edit pada cashflow yang sudah `counted_on` tidak diubah di tempat; sistem membuat baris koreksi selisih yang masuk snapshot berikutnya (H-2).
 
+### 6.3a Catatan implementasi slice 2
+- Semua tulis transaksi lewat RPC `security definer` yang memeriksa `auth.uid()`: `create_savings`, `record_opening`, `record_flow`, `set_balance`, `update_cash_transaction`, `portfolio_cash_holding`. Klien hanya boleh `select`/`delete` transaksi dan mengubah `name`/`params`/`archived_at` holding.
+- Saldo awal (`opening`) memakai `flow_kind = 'none'` dan dihitung modal awal bila belum ada snapshot; setelah snapshot pertama menjadi `external_in` (PRD A-42).
+- Koreksi (H-2) disimpan di `private.cashflow_corrections`: trigger transaksi mencatat selisih nilai modal (baru − lama) bila baris lama sudah `counted_on`; trigger `before delete` pada holding mencatat −Σ nilai modal baris yang sudah dihitung. Snapshot berikutnya menjumlah cashflow belum dihitung + koreksi.
+- Performa unit: `private.unit_step(prev_units, last_value, value, flow)`. Unit mulai ulang dari nilai unit terakhir setelah unit nol atau periode tak terdefinisi; nilai unit dibiarkan null bila nilai sebelum cashflow ≤ 0 (PRD A-36).
+- `dashboard_summary()` mengembalikan jsonb dengan angka sebagai teks agar Dart mem-parse `Decimal` tanpa lewat `double`. `snapshot_history()` memberi net worth, cashflow, perubahan (selisih net worth − cashflow), disetor bersih, nilai unit.
+- SQLSTATE kustom yang dipetakan ke pesan UI: `KKN01` saldo jadi negatif, `KKD01` tanggal di masa depan atau sebelum saldo awal, `KKC01` kas kantong masih berisi (atau kas dimatikan), `KKH01` tidak ditemukan/bukan milik user, `KKA01` nominal harus positif.
+- Jadwal pg_cron `take_snapshots` (11:00 UTC = 18:00 WIB) dan `take_snapshots_retry` (tiap 30 menit 11–16 UTC) hanya dibuat bila ekstensi `pg_cron` tersedia; `take_all_snapshots` mencatat ke `private.job_runs`/`job_errors`.
+
 ### 6.4 Estimasi ukuran
 - `snapshot_items`: ±40 holding × 365 hari ≈ 14.600 baris/user/tahun × ±200 byte (termasuk indeks) ≈ **3 MB/user/tahun**. Ditambah `snapshots`, `snapshot_portfolios`, transaksi: ≈ **4 MB/user/tahun**.
 - `prices_daily`: ±200 instrumen × 365 ≈ 73.000 baris/tahun ≈ 10 MB/tahun (global).
@@ -359,3 +368,5 @@ Setiap slice: migrasi DB → fungsi/RPC + test → UI → commit.
 | H-2 | Edit cashflow yang sudah masuk snapshot dicatat sebagai baris koreksi |
 | H-3 | Region produksi Singapura |
 | H-4 | Migrasi produksi diterapkan manual di MVP |
+| H-5 | Angka uang dari RPC dikirim sebagai teks (Decimal di Dart) |
+| H-6 | Unit performa mulai ulang dari nilai unit terakhir setelah unit nol |

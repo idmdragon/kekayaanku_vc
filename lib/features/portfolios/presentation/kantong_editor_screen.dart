@@ -1,15 +1,20 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/user_message.dart';
+import '../../../core/format/amount_input.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../shared/widgets/amount_field.dart';
 import '../../../shared/widgets/page_frame.dart';
 import '../../../shared/widgets/states.dart';
 import '../../../shared/widgets/top_bar.dart';
 import '../../auth/presentation/auth_widgets.dart';
+import '../../holdings/application/finance_providers.dart';
+import '../../holdings/presentation/opening_note.dart';
 import '../application/kantong_controller.dart';
 import '../domain/kantong.dart';
 import 'kantong_widgets.dart';
@@ -87,6 +92,7 @@ class _EditorState extends ConsumerState<_Editor> {
   late final _name = TextEditingController(text: _draft.name);
   late final _note = TextEditingController(text: _draft.note);
   final _customEmoji = TextEditingController();
+  final _openingCash = TextEditingController();
   bool _busy = false;
   String? _error;
 
@@ -97,6 +103,7 @@ class _EditorState extends ConsumerState<_Editor> {
     _name.dispose();
     _note.dispose();
     _customEmoji.dispose();
+    _openingCash.dispose();
     super.dispose();
   }
 
@@ -116,6 +123,28 @@ class _EditorState extends ConsumerState<_Editor> {
         if (mounted) context.pop();
       } else {
         final k = await ctrl.create(draft);
+        final opening = draft.cashEnabled
+            ? parseRupiahInput(_openingCash.text)
+            : null;
+        if (opening != null && opening > Decimal.zero) {
+          try {
+            await ref
+                .read(financeActionsProvider)
+                .openKantongCash(k.id, opening);
+          } catch (e) {
+            // The kantong exists; say what is missing instead of failing.
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Kantong dibuat, tetapi saldo awal kas belum tersimpan. '
+                    '${userMessage(e)}',
+                  ),
+                ),
+              );
+            }
+          }
+        }
         if (mounted) context.pushReplacement('/kantong/${k.id}');
       }
     } catch (e) {
@@ -186,6 +215,22 @@ class _EditorState extends ConsumerState<_Editor> {
               value: _draft.cashEnabled,
               onChanged: (v) => _set(_draft.copyWith(cashEnabled: v)),
             ),
+            if (_draft.cashEnabled && !_editing)
+              LabeledField(
+                label: 'Saldo awal kas (opsional)',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    RupiahField(
+                      controller: _openingCash,
+                      required: false,
+                      allowZero: true,
+                    ),
+                    const SizedBox(height: AppSpacing.s4),
+                    const OpeningNote(),
+                  ],
+                ),
+              ),
             LabeledField(
               label: 'Catatan (opsional)',
               child: TextFormField(

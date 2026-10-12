@@ -1,5 +1,8 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:kekayaanku/features/dashboard/domain/summary.dart';
 
 import '../helpers/fakes.dart';
 
@@ -24,6 +27,23 @@ void main() {
         addTearDown(t.platformDispatcher.clearPlatformBrightnessTestValue);
 
         final h = TestHarness(kantong: kantong);
+        h.finance
+          ..seedSavings('a', 'Tabungan BCA rekening utama keluarga', 48200000)
+          ..points.addAll([
+            SnapshotPoint(
+              date: DateTime(2026, 10, 11),
+              netWorth: Decimal.fromInt(48200000),
+              netFlow: Decimal.fromInt(5000000),
+              netDeposits: Decimal.fromInt(48000000),
+              change: Decimal.zero,
+            ),
+            SnapshotPoint(
+              date: DateTime(2026, 10, 10),
+              netWorth: Decimal.fromInt(43200000),
+              netFlow: Decimal.zero,
+              netDeposits: Decimal.fromInt(43000000),
+            ),
+          ]);
         await h.profile.fetch('u1');
         h.profile.stored = h.profile.stored!.copyWith(
           themeMode: ThemeMode.system,
@@ -54,6 +74,21 @@ void main() {
         await t.pumpAndSettle();
         expect(find.text('Simpan perubahan'), findsOneWidget);
         expect(t.takeException(), isNull, reason: 'editor');
+
+        for (var i = 0; i < 2; i++) {
+          await t.tap(find.bySemanticsLabel('Kembali'));
+          await t.pumpAndSettle();
+        }
+        await t.tap(find.textContaining('Saham Investing').first);
+        await t.pumpAndSettle();
+        await t.tap(find.textContaining('Tabungan BCA').first);
+        await t.pumpAndSettle();
+        expect(find.text('Set saldo'), findsOneWidget);
+        expect(t.takeException(), isNull, reason: 'holding detail');
+
+        await t.tap(find.bySemanticsLabel('Setor'));
+        await t.pumpAndSettle();
+        expect(t.takeException(), isNull, reason: 'flow sheet');
       });
     }
   }

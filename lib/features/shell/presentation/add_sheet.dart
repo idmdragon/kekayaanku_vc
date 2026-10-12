@@ -6,9 +6,10 @@ import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../shared/widgets/list_group.dart';
+import '../../holdings/presentation/cash_sheets.dart';
 
 /// The Tambah sheet: Transaksi and Lainnya (docs/design-system.md 7.1).
-/// Transactions arrive with the asset slices, so they show as unavailable.
+/// Beli and jual arrive with the stock and crypto slices.
 class AddSheet extends StatelessWidget {
   const AddSheet({super.key});
 
@@ -19,22 +20,30 @@ class AddSheet extends StatelessWidget {
       context.push(path);
     }
 
+    void flow(bool inflow) {
+      // Open from the shell's context: this sheet's context goes away.
+      final nav = Navigator.of(context);
+      final host = nav.context;
+      nav.pop();
+      showFlowSheet(host, inflow: inflow);
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SectionLabel('Transaksi'),
         const SizedBox(height: AppSpacing.s8),
-        const _ActionGrid(
+        _ActionGrid(
           actions: [
-            _Action('Beli', AppIcons.buy),
-            _Action('Jual', AppIcons.sell),
-            _Action('Setor', AppIcons.deposit),
-            _Action('Tarik', AppIcons.withdraw),
+            const _Action('Beli', AppIcons.buy),
+            const _Action('Jual', AppIcons.sell),
+            _Action('Setor', AppIcons.deposit, onTap: () => flow(true)),
+            _Action('Tarik', AppIcons.withdraw, onTap: () => flow(false)),
           ],
         ),
         const SizedBox(height: AppSpacing.s8),
         Text(
-          'Beli, jual, setor, dan tarik aktif setelah pencatatan aset tersedia.',
+          'Beli dan jual aktif bersama pencatatan saham dan kripto.',
           style: context.text.bodySmall,
         ),
         const SizedBox(height: AppSpacing.s16),
@@ -42,6 +51,7 @@ class AddSheet extends StatelessWidget {
         const SizedBox(height: AppSpacing.s8),
         _ActionGrid(
           actions: [
+            _Action('Aset baru', AppIcons.add, onTap: () => go('/aset/baru')),
             _Action(
               'Kantong baru',
               AppIcons.wallet,
