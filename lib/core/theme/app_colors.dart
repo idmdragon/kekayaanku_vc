@@ -117,6 +117,40 @@ class AppColors extends ThemeExtension<AppColors> {
   Color kantongTint(KantongColor k, {double amount = 0.16}) =>
       Color.alphaBlend(k.color.withValues(alpha: amount), surface);
 
+  bool get _isLight => surface.computeLuminance() > 0.5;
+
+  /// Strongest kantong tint, used at the top left of the detail header.
+  /// Dark mode uses 40% instead of the mockup's 46% so text keeps 4.5:1.
+  double get kantongHeroTint => _isLight ? 0.46 : 0.40;
+
+  /// Kantong card background (docs/design-system.md 7.1): the kantong colour
+  /// mixed into [surface], stronger at the top left. [hero] is the header of
+  /// the kantong detail screen.
+  LinearGradient kantongGradient(KantongColor k, {bool hero = false}) {
+    final (from, to) = hero ? (kantongHeroTint, 0.12) : (0.32, 0.09);
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        kantongTint(k, amount: from),
+        kantongTint(k, amount: to),
+      ],
+    );
+  }
+
+  /// Secondary text on a kantong card, tinted by the kantong colour. Plain
+  /// [muted] is too weak on the tints, so it leans toward [fg]
+  /// (checked in test/core/theme/contrast_test.dart).
+  Color kantongMuted(KantongColor k) => _isLight
+      ? Color.lerp(Color.lerp(muted, k.color, 0.22)!, fg, 0.35)!
+      : Color.lerp(fg, k.color, 0.3)!;
+
+  /// Inset panel on a kantong card (Modal · Unrealized · Tunai).
+  Color kantongInset(KantongColor k) => Color.alphaBlend(
+    bg.withValues(alpha: 0.45),
+    kantongTint(k, amount: 0.32),
+  );
+
   @override
   AppColors copyWith() => this;
 

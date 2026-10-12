@@ -73,3 +73,17 @@ class AppNumberStyles extends ThemeExtension<AppNumberStyles> {
   AppNumberStyles lerp(AppNumberStyles? other, double t) =>
       other == null || t < 0.5 ? this : other;
 }
+
+extension AppTextX on BuildContext {
+  TextTheme get text => Theme.of(this).textTheme;
+  AppNumberStyles get nums => Theme.of(this).extension<AppNumberStyles>()!;
+}
+
+extension TextStyleWeight on TextStyle {
+  /// Geist is a variable font, so a weight change must also move the
+  /// `wght` axis; `copyWith(fontWeight: …)` alone keeps the old weight.
+  TextStyle weight(FontWeight w) => copyWith(
+    fontWeight: w,
+    fontVariations: [FontVariation.weight(w.value.toDouble())],
+  );
+}

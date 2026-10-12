@@ -53,3 +53,9 @@ String formatCompact(Decimal v, {int decimals = 1, bool signed = false}) {
 /// `+0,44%`, `−9,70%`. [percent] is already in percent units.
 String formatPercent(Decimal percent, {int decimals = 2, bool signed = true}) =>
     '${_sign(percent, plus: signed)}${_fixed(percent.abs(), decimals)}%';
+
+/// Amounts on kantong cards: compact from one million (`312,41 jt`),
+/// full rupiah below it (`Rp850.000`, `Rp0`).
+String formatCardAmount(Decimal v, {int decimals = 2}) => v.abs() >= _million
+    ? formatCompact(v, decimals: decimals)
+    : formatRupiah(v);

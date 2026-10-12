@@ -52,4 +52,13 @@ void main() {
       expect(formatPercent(d('0')), '0,00%');
     });
   });
+
+  group('formatCardAmount', () {
+    test('full rupiah below one million, compact above', () {
+      expect(formatCardAmount(d('0')), 'Rp0');
+      expect(formatCardAmount(d('850000')), 'Rp850.000');
+      expect(formatCardAmount(d('312410000')), '312,41 jt');
+      expect(formatCardAmount(d('-1500000')), '−1,50 jt');
+    });
+  });
 }

@@ -41,6 +41,24 @@ void main() {
         }
       });
 
+      test('$name: text on kantong tints reaches 4.5:1', () {
+        for (final k in KantongColor.values) {
+          for (final bg in [
+            c.kantongTint(k, amount: c.kantongHeroTint),
+            c.kantongTint(k, amount: 0.09),
+            c.kantongInset(k),
+          ]) {
+            for (final fg in [c.fg, c.kantongMuted(k)]) {
+              expect(
+                contrast(fg, bg),
+                greaterThanOrEqualTo(4.5),
+                reason: '$name ${k.name}',
+              );
+            }
+          }
+        }
+      });
+
       test('$name: text on accent reaches 4.5:1', () {
         expect(contrast(c.onAccent, c.accent), greaterThanOrEqualTo(4.5));
       });

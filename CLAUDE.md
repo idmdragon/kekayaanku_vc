@@ -18,6 +18,7 @@ Panduan kerja untuk Claude (dan siapa pun) di repo ini. Baca bersama `docs/prd.m
 ## UI (skill flutter-anti-slop-ui)
 - Ikuti `docs/design-system.md` dan mockup yang disetujui. Hindari tampilan generik AI.
 - Warna hanya dari `context.colors` (`AppColors`), angka dari `AppNumberStyles` (tabular), teks dari `Theme.of(context).textTheme`. Spasi dan radius dari `AppSpacing` / `AppRadius`. **Tidak ada hex, `Colors.*`, atau angka padding/ukuran hardcode** di luar `lib/core/theme/`.
+- Ubah ketebalan huruf dengan `.weight(FontWeight.x)` dari `app_typography.dart`, bukan `copyWith(fontWeight:)`: Geist adalah variable font, jadi sumbu `wght` harus ikut diubah.
 - Ikon hanya lewat `AppIcons` (`lib/core/theme/app_icons.dart`), satu-satunya file yang mengimpor paket ikon.
 - Setiap layar punya state loading (skeleton), empty (pesan + aksi), dan error (bisa dicoba ulang).
 - Responsif: compact < 600, medium 600–1024, expanded > 1024 (`AppBreakpoints`). Web memakai max-width dan navigasi samping, bukan layout HP yang direntangkan.

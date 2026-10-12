@@ -5,7 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_spacing.dart';
 
-/// Temporary first screen for Tahap 4. Slice 1 replaces it with sign-in.
+/// Shown instead of the app when the build has no Supabase configuration.
 class SetupStatusScreen extends StatelessWidget {
   const SetupStatusScreen({super.key});
 
@@ -17,15 +17,15 @@ class SetupStatusScreen extends StatelessWidget {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
+            constraints: const BoxConstraints(maxWidth: AppLayout.formMaxWidth),
             child: ListView(
               padding: const EdgeInsets.all(AppSpacing.gutterMobile),
               children: [
                 Text('Kekayaanku', style: text.headlineMedium),
                 const SizedBox(height: AppSpacing.s8),
                 Text(
-                  'Fondasi aplikasi sudah siap. Masuk, profil, dan kantong '
-                  'dibangun di slice pertama.',
+                  'Aplikasi belum terhubung ke database. Isi URL dan '
+                  'publishable key Supabase, lalu jalankan ulang.',
                   style: text.bodyMedium,
                 ),
                 const SizedBox(height: AppSpacing.s24),
