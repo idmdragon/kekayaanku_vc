@@ -1,0 +1,38 @@
+name: kekayaanku
+description: "Pelacak kekayaan bersih pribadi: snapshot harian lintas aset dalam rupiah."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.5
+
+dependencies:
+  decimal: ^3.2.6
+  fl_chart: ^1.2.0
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  flutter_riverpod: ^3.4.3
+  freezed_annotation: ^3.1.0
+  go_router: ^18.0.2
+  intl: ^0.20.3
+  json_annotation: ^4.12.0
+  lucide_icons_flutter: ^3.1.25
+  supabase_flutter: ^2.18.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.16.2
+  freezed: ^4.0.2
+  json_serializable: ^6.14.1
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Geist
+      fonts:
+        - asset: assets/fonts/Geist-Variable.ttf
+
