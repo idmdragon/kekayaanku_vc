@@ -54,4 +54,5 @@ Catatan 12 Okt: lingkungan kerja Claude tidak bisa menjangkau Yahoo dan Galeri24
 
 ## Keputusan
 - 12 Okt: saldo awal aset yang ditambah setelah snapshot pertama dihitung setoran (PRD A-42, pilihan Ilham).
+- 12 Okt: perubahan hari ini tidak memasukkan setor/tarik sejak snapshot terakhir (PRD A-43, disetujui Ilham).
 - 12 Okt: repo dijadikan publik agar web bisa di GitHub Pages (pilihan Ilham).
